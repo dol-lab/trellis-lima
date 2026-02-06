@@ -39,5 +39,5 @@ fi
 echo "--------------------------------------------------------"
 echo "✅ Setup complete!"
 echo "You can now start your VM with:"
-echo "  ./bin/lima start"
+echo "  ./bin/task vm start"
 echo "--------------------------------------------------------"

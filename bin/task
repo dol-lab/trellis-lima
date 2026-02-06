@@ -121,6 +121,34 @@ class LimaManager:
             except json.JSONDecodeError: pass
         return None
 
+    def check_ip(self):
+        ip = self.conf['ip']
+        if ip == "127.0.0.1": return
+
+        found = False
+        try:
+            cmd = ["ifconfig"] if sys.platform == "darwin" else ["ip", "addr"]
+            res = run_command(cmd, capture=True, check=False)
+            if re.search(rf"\b{re.escape(ip)}\b", res.stdout): found = True
+        except Exception: pass
+
+        if not found:
+            print(f"\n⚠️  IP {ip} is not configured on this host.")
+            print(f"   Required for multiple VMs (avoids port conflicts).")
+            
+            fix_cmd = f"sudo ifconfig lo0 alias {ip}" if sys.platform == "darwin" else f"sudo ip addr add {ip}/32 dev lo"
+            print(f"   Command: {fix_cmd}")
+            
+            try:
+                if input("\n👉 Would you like to run this command now? [y/N] ").lower() == 'y':
+                    # Use shell=True for the sudo command string
+                    run_command(fix_cmd, check=True)
+                    print(f"✅ IP alias {ip} added.\n")
+                else:
+                    sys.exit("❌ Please configure the IP alias first.")
+            except EOFError:
+                sys.exit(1)
+
     def _build_lima_config(self):
         lima_cfg = PROJECT_ROOT / "lima.yaml"
         if not lima_cfg.exists(): sys.exit("❌ lima.yaml missing")
@@ -138,6 +166,7 @@ class LimaManager:
         return cfg
 
     def start(self):
+        self.check_ip()
         if sys.platform == "linux":
              sysctl_path = "/proc/sys/net/ipv4/ip_unprivileged_port_start"
              if os.path.exists(sysctl_path):
