@@ -311,6 +311,8 @@ def handle_vault(args, extra):
     files = list((PROJECT_ROOT / "group_vars").glob("**/vault.yml"))
     cmd = ["ansible-vault", args.vault_command]
     if VAULT_PASS_FILE.exists(): cmd.extend(["--vault-password-file", str(VAULT_PASS_FILE)])
+    if args.vault_command == "encrypt" and not any(a.startswith("--encrypt-vault-id") for a in extra):
+        cmd.extend(["--encrypt-vault-id", "default"])
     if not any(not a.startswith('-') for a in extra):
         if not extra: cmd.extend([str(f) for f in files])
     cmd.extend(extra)
